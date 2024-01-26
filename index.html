@@ -6,27 +6,47 @@
     <link rel="stylesheet" href="style.css">
     <title>Calculadora de Vencimento de Boleto</title>
     <script>
-        //Função aonde será calculado a data e o horario.
-        function calcularVencimento() {
-            var dataVencimento = new Date(document.getElementById("data-vencimento").value);
-            var dataAtual = new Date();
-            var horaAtual = dataAtual.getHours();
+        // Função para verificar se é final de semana e o boleto vence no próximo dia útil
+        function ehFinalDeSemana(data) {
+            // Verifica se o dia da semana é sábado (6) e se o boleto vence no próximo dia (domingo)
+            return data.getDay() === 6 && Math.ceil((data - new Date()) / (1000 * 60 * 60 * 24)) === 1;
+        }
 
-            // Aqui é feito o cálculo do vencimento.
+        // Função para calcular a data e o horário e decidir se o formulário de envio deve ser exibido
+        function calcularVencimento() {
+            // Obtém a data de vencimento do input
+            var dataVencimento = new Date(document.getElementById("data-vencimento").value);
+            // Obtém a data atual
+            var dataAtual = new Date();
+            // Obtém a hora atual
+            var horaAtual = dataAtual.getHours();
+            // Obtém o dia da semana atual
+            var diaAtual = dataAtual.getDay();
+
+            // Calcula a diferença em milissegundos entre as datas
             var diferencaEmMilissegundos = dataVencimento - dataAtual;
+            // Calcula a diferença em dias arredondando para cima
             var diferencaEmDias = Math.ceil(diferencaEmMilissegundos / (1000 * 60 * 60 * 24)); 
 
-            // Envia uma mensagem caso o boleto esteja perto ou já venceu.
+            // Verifica se o boleto está vencido
             if (diferencaEmDias <= 0) {
-                document.getElementById("mensagem").innerHTML = "O boleto não pode ser enviado, pois já esta vencido";
+                // Exibe mensagem de boleto vencido e oculta o formulário de envio
+                document.getElementById("mensagem").innerHTML = "O boleto não pode ser enviado, pois já está vencido.";
                 document.querySelector(".arquivo").style.display = "none";
             } 
-            // Verifica se está dentro do horário permitido para enviar o arquivo.
+            // Verifica se está fora do horário permitido para envio
             else if (horaAtual < 8 || horaAtual >= 16) {
-                document.getElementById("mensagem").innerHTML = "O boleto so pode ser enviado entre 08:00 e 16:00 horas.";
+                // Exibe mensagem de horário inválido e oculta o formulário de envio
+                document.getElementById("mensagem").innerHTML = "O boleto só pode ser enviado entre 08:00 e 16:00 horas.";
                 document.querySelector(".arquivo").style.display = "none";
             }
-            // Informa a quantidade de dias que falta para vencer e exibe o campo de enviar arquivo.
+            // Verifica se é sábado e o boleto vence no domingo seguinte
+            else if (diaAtual === 6 && ehFinalDeSemana(dataVencimento)) {
+                // Exibe mensagem de inviabilidade e oculta o formulário de envio
+                document.getElementById("mensagem").innerHTML = "O boleto não pode ser enviado no sábado pois vence no domingo.";
+                document.querySelector(".arquivo").style.display = "none";
+            }
+            // Caso contrário, exibe a contagem de dias e mostra o formulário de envio
             else {
                 document.getElementById("mensagem").innerHTML = "Faltam " + diferencaEmDias + " dias para o vencimento do boleto.";
                 document.querySelector(".arquivo").style.display = "block";
@@ -37,13 +57,17 @@
 <body> 
     <h1>Calculadora de Vencimento de Boleto</h1>
     <div class="Calendario">
+        <!-- Campo para seleção da data de vencimento do boleto -->
         <label for="data-vencimento">Selecione a data de vencimento do boleto:</label>
         <input type="date" id="data-vencimento"> 
         <br><br> 
     </div> 
+    <!-- Botão para acionar a verificação de vencimento -->
     <button onclick="calcularVencimento()">Verificar Vencimento</button>
+    <!-- Div para exibir mensagens sobre o vencimento do boleto -->
     <div id="mensagem"></div>
 
+    <!-- Formulário para envio do arquivo, inicialmente oculto -->
     <div class="arquivo" style="display: none;">
         <form action="/upload" method="post" enctype="multipart/form-data">
             <label for="arquivo">Selecione um arquivo:</label>
